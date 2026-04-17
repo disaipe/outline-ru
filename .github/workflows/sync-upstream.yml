@@ -1,0 +1,97 @@
+name: sync-upstream
+
+on:
+  schedule:
+    - cron: "0 6 * * MON"
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Upstream SHA to sync to (defaults to outline/main HEAD)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve target upstream SHA
+        id: sha
+        run: |
+          if [[ -n "${{ inputs.sha }}" ]]; then
+            echo "sha=${{ inputs.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            sha=$(git ls-remote https://github.com/outline/outline.git main | awk '{print $1}')
+            echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compare with pinned SHA
+        id: diff
+        run: |
+          current=$(cat UPSTREAM_SHA | tr -d '[:space:]')
+          target=${{ steps.sha.outputs.sha }}
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          if [[ "$current" == "$target" ]]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Nothing to do
+        if: steps.diff.outputs.changed == 'false'
+        run: echo "Already at $(cat UPSTREAM_SHA) — nothing to sync."
+
+      - uses: actions/setup-node@v4
+        if: steps.diff.outputs.changed == 'true'
+        with:
+          node-version: "22"
+
+      - name: Apply overlay on top of target SHA
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          ./scripts/build.sh --sha ${{ steps.diff.outputs.target }} --skip-build
+
+      - name: Install overlay deps
+        if: steps.diff.outputs.changed == 'true'
+        run: npm install --no-audit --no-fund --ignore-scripts
+
+      - name: Translate missing keys
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          TRANSLATION_PROVIDER: ${{ vars.TRANSLATION_PROVIDER }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
+        run: npm run translate
+
+      - name: Bump UPSTREAM_SHA
+        if: steps.diff.outputs.changed == 'true'
+        run: echo "${{ steps.diff.outputs.target }}" > UPSTREAM_SHA
+
+      - name: Open pull request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: sync/upstream-${{ steps.diff.outputs.target }}
+          title: "chore(sync): upstream ${{ steps.diff.outputs.target }}"
+          commit-message: "chore(sync): upstream ${{ steps.diff.outputs.target }}"
+          body: |
+            Automated sync from outline/outline `main`.
+
+            - Upstream SHA: `${{ steps.diff.outputs.current }}` → `${{ steps.diff.outputs.target }}`
+            - New translations (if any) were produced by `scripts/translate-missing.ts`
+            - Review keys in `overlay/shared/i18n/locales/ru_RU/.auto-translated.json`
+
+            Merge after a quick review of the machine-translated entries.
+          labels: |
+            sync
+            translations

@@ -1,0 +1,17 @@
+# syntax=docker/dockerfile:1
+#
+# Lightweight layer that overwrites just the ru_RU translation file on top of
+# an existing outline-ru image. Used by .github/workflows/translation-only.yml
+# when only the locale JSON changed — avoids a full yarn build (~5–10 min)
+# and ships the new strings in ~20 s.
+#
+# Prerequisite: BASE_IMAGE must already contain ru_RU in the compiled bundle
+# (i.e. built by build-image.yml at least once). This layer only updates
+# string content, it cannot introduce a new language.
+
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+COPY --chown=nodejs:nodejs \
+  overlay/shared/i18n/locales/ru_RU/translation.json \
+  /opt/outline/build/shared/i18n/locales/ru_RU/translation.json

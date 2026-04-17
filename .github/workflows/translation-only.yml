@@ -1,0 +1,74 @@
+name: translation-only
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "overlay/shared/i18n/locales/**"
+  workflow_dispatch:
+
+# Share the same group as build-image.yml so we don't race on :latest.
+concurrency:
+  group: image-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: read
+  # write required to push the resulting image back to ghcr
+  id-token: none
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read upstream SHA & version
+        id: meta
+        run: |
+          sha=$(cat UPSTREAM_SHA | tr -d '[:space:]')
+          short=${sha:0:7}
+          # Read version from the upstream package.json via raw.githubusercontent
+          # so we don't have to clone the whole repo just to read one field.
+          version=$(curl -fsSL \
+            "https://raw.githubusercontent.com/outline/outline/${sha}/package.json" \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).version))")
+          stamp=$(date -u +%Y%m%d%H%M%S)
+          echo "short=$short" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "stamp=$stamp" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure base image exists
+        id: base
+        run: |
+          base="ghcr.io/${{ github.repository_owner }}/outline-ru:latest"
+          if ! docker manifest inspect "$base" >/dev/null 2>&1; then
+            echo "::error::Base image $base not found. Run build-image.yml at least once before translation-only can work."
+            exit 1
+          fi
+          echo "image=$base" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push translation-patched image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: overlay/Dockerfile.translation-only
+          build-args: |
+            BASE_IMAGE=${{ steps.base.outputs.image }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/outline-ru:${{ steps.meta.outputs.version }}-${{ steps.meta.outputs.short }}-t${{ steps.meta.outputs.stamp }}
+            ghcr.io/${{ github.repository_owner }}/outline-ru:latest

@@ -1,0 +1,20 @@
+diff --git a/shared/utils/date.ts b/shared/utils/date.ts
+index 3b6bffa..42bc93f 100644
+--- a/shared/utils/date.ts
++++ b/shared/utils/date.ts
+@@ -28,6 +28,7 @@ import {
+   ptBR,
+   pt,
+   pl,
++  ru,
+   sv,
+   tr,
+   vi,
+@@ -276,6 +277,7 @@ const locales = {
+   pt_BR: ptBR,
+   pt_PT: pt,
+   pl_PL: pl,
++  ru_RU: ru,
+   sv_SE: sv,
+   tr_TR: tr,
+   uk_UA: uk,

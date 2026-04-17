@@ -1,0 +1,15 @@
+diff --git a/shared/i18n/index.ts b/shared/i18n/index.ts
+index e55c180..91080cb 100644
+--- a/shared/i18n/index.ts
++++ b/shared/i18n/index.ts
+@@ -100,6 +100,10 @@ export const languageOptions: LanguageOption[] = [
+     label: "Tiếng Việt (Vietnamese)",
+     value: "vi_VN",
+   },
++  {
++    label: "Русский (Russian)",
++    value: "ru_RU",
++  },
+ ];
+ 
+ export const languages = languageOptions.map((i) => i.value);

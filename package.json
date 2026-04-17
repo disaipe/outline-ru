@@ -1,0 +1,20 @@
+{
+  "name": "outline-ru",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Russian-language overlay for outlinewiki/outline — minimal patches + ru_RU translation, no fork of the core",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "./scripts/build.sh",
+    "apply-overlay": "./scripts/build.sh --skip-build",
+    "translate": "node --experimental-strip-types --no-warnings scripts/translate-missing.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
+    "openai": "^4.75.0"
+  },
+  "packageManager": "yarn@4.14.1"
+}

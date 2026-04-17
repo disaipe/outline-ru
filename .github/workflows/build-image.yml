@@ -1,0 +1,70 @@
+name: build-image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Only trigger a full rebuild when something that affects the built
+      # artifact changes. Translation-only edits go through translation-only.yml.
+      - "UPSTREAM_SHA"
+      - "overlay/patches/**"
+      - "scripts/build.sh"
+      - ".github/workflows/build-image.yml"
+  workflow_dispatch:
+
+# Serialize image publishing so translation-only.yml and build-image.yml
+# don't race when both touch :latest.
+concurrency:
+  group: image-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read upstream SHA
+        id: meta
+        run: |
+          sha=$(cat UPSTREAM_SHA | tr -d '[:space:]')
+          short=${sha:0:7}
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "short=$short" >> "$GITHUB_OUTPUT"
+
+      - name: Apply overlay on top of upstream
+        run: ./scripts/build.sh --skip-build
+
+      - name: Read upstream package.json version
+        id: version
+        run: |
+          v=$(node -p "require('./.build/outline/package.json').version")
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./.build/outline
+          file: ./.build/outline/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/outline-ru:${{ steps.version.outputs.version }}-${{ steps.meta.outputs.short }}
+            ghcr.io/${{ github.repository_owner }}/outline-ru:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/outline-ru:latest
+          # GHA registry cache — most of yarn install and common layers are
+          # re-used across builds here. yarn.lock changes invalidate install layer.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
