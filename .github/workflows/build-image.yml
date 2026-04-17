@@ -57,14 +57,18 @@ jobs:
       - name: Build & push image
         uses: docker/build-push-action@v5
         with:
+          # Build context is the clone-with-overlay prepared by build.sh --skip-build
           context: ./.build/outline
-          file: ./.build/outline/Dockerfile
+          # Our own Dockerfile — does yarn install + yarn build in-tree instead
+          # of pulling a pre-built outlinewiki/outline-base (which would skip
+          # our patches and ship stale upstream compile output).
+          file: ./overlay/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/outline-ru:${{ steps.version.outputs.version }}-${{ steps.meta.outputs.short }}
             ghcr.io/${{ github.repository_owner }}/outline-ru:${{ steps.version.outputs.version }}
             ghcr.io/${{ github.repository_owner }}/outline-ru:latest
-          # GHA registry cache — most of yarn install and common layers are
-          # re-used across builds here. yarn.lock changes invalidate install layer.
+          # GHA registry cache — yarn install layer is re-used across builds
+          # while yarn.lock stays the same.
           cache-from: type=gha
           cache-to: type=gha,mode=max
