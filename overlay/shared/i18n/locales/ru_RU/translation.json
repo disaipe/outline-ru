@@ -188,6 +188,7 @@
   "Collection": "Коллекция",
   "Collections": "Коллекции",
   "Debug": "Отладка",
+  "Date": "Дата",
   "Document": "Документ",
   "Search results": "Результаты поиска",
   "Documents": "Документы",
@@ -616,8 +617,6 @@
   "Divider": "Разделитель",
   "Page break": "Разрыв страницы",
   "Current date": "Текущая дата",
-  "Current time": "Текущее время",
-  "Current date and time": "Текущая дата и время",
   "Info notice": "Информационное уведомление",
   "Success notice": "Уведомление",
   "Warning notice": "Предупреждение",
@@ -1781,5 +1780,6 @@
   "Hide completed": "Скрыть завершенное",
   "Write a caption": "Напишите подпись",
   "Add title": "Добавить заголовок",
-  "Add content": "Добавить контент"
+  "Add content": "Добавить контент",
+  "Tomorrow": "Завтра"
 }
