@@ -1,5 +1,5 @@
 {
-  "translatedAt": "2026-06-08T11:00:49.831Z",
+  "translatedAt": "2026-06-15T12:20:09.371Z",
   "keys": [
     "API key copied",
     "Access request dismissed",
@@ -22,6 +22,7 @@
     "Create all data",
     "Created by",
     "Customize how the published document is displayed",
+    "Date",
     "Display settings",
     "Document access requested",
     "Done",
@@ -46,6 +47,7 @@
     "Sharing settings updated",
     "Site title",
     "Sort",
+    "Tomorrow",
     "Upload",
     "Uploading {{progress}}%",
     "Webhook",
