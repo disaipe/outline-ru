@@ -1,16 +1,16 @@
 diff --git a/shared/utils/date.ts b/shared/utils/date.ts
-index 3b6bffa..42bc93f 100644
+index 19d4e87..68647d1 100644
 --- a/shared/utils/date.ts
 +++ b/shared/utils/date.ts
-@@ -28,6 +28,7 @@ import {
-   ptBR,
-   pt,
-   pl,
-+  ru,
-   sv,
-   tr,
-   vi,
-@@ -276,6 +277,7 @@ const locales = {
+@@ -37,6 +37,7 @@ import { nl } from "date-fns/locale/nl";
+ import { ptBR } from "date-fns/locale/pt-BR";
+ import { pt } from "date-fns/locale/pt";
+ import { pl } from "date-fns/locale/pl";
++import { ru } from "date-fns/locale/ru";
+ import { sv } from "date-fns/locale/sv";
+ import { tr } from "date-fns/locale/tr";
+ import { vi } from "date-fns/locale/vi";
+@@ -285,6 +286,7 @@ const locales = {
    pt_BR: ptBR,
    pt_PT: pt,
    pl_PL: pl,
